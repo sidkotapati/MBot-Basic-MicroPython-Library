@@ -9,7 +9,7 @@ class Motor0:
         self.pwm.duty_u16(0)
         
     def set(self, duty):
-        duty *= -1;
+        duty *= 1;
         if((duty >= 0.0) and (duty <= 1.0)):
             self.dir.on()
             self.pwm.duty_u16(int(duty * 65535))
@@ -28,6 +28,7 @@ class Motor1:
         self.pwm.duty_u16(0)
         
     def set(self, duty):
+        duty *= -1;
         if((duty >= 0.0) and (duty <= 1.0)):
             self.dir.on()
             self.pwm.duty_u16(int(duty * 65535))
@@ -45,7 +46,7 @@ def delay(time):
 def drive(speed, time):
     utime.sleep_ms(50)
     mot0 = Motor0(2, 14)
-    mot1 = Motor0(3, 15)
+    mot1 = Motor1(3, 15)
     mot0.set(speed)
     mot1.set(speed)
     utime.sleep_ms(time*1000)
@@ -77,6 +78,6 @@ def turnright():
 
 if __name__ == "__main__":
     delay(2)
-    drive(0.4, 6)
+    drive(0.1, 6)
     
-    
+      
