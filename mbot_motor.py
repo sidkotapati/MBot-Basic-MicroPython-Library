@@ -1,66 +1,95 @@
+# mbot_robot file
 from machine import Pin, PWM
 import utime
+from mbot_motor import Motor
+from mbot_encoder import Encoder
 
-class Motor:
-    def __init__(self, pwm_pin, dir_pin, orientation):
-        self.dir = Pin(dir_pin, Pin.OUT)
-        self.pwm = PWM(Pin(pwm_pin))
-        self.pwm.freq(10000)
-        self.pwm.duty_u16(0)
-        self.orient = orientation
+class Robot:
+    def __init__(self):
+        self.mot0 = Motor(2, 14, 0)
+        self.mot1 = Motor(3, 15, 1)
+        self.enc0 = Encoder(6, 7, 0)
+        self.enc1 = Encoder(8, 9, 1)
         
-    def set(self, duty):
-        if(self.orient):
-            duty *= -1
-        if((duty >= 0.0) and (duty <= 1.0)):
-            self.dir.on()
-            self.pwm.duty_u16(int(duty * 65535))
-        elif((duty < 0.0) and (duty >= -1.0)):
-            self.dir.off()
-            self.pwm.duty_u16(int(-duty * 65535))
-        else:
-            print("ERROR: duty out of range")
-                       
+    def delay(self, time):
+        time = time * 1000
+        utime.sleep_ms(int(time))
             
-def delay(time):
-    time *= 1000
-    utime.sleep_ms(int(time))
+    def drive(self, speed, time):
+        SAMPLETIME = 0.1
+        TARGET = 400*speed
+        KP = 0.00018
+        KD = 0.00008
+        KI = 0.00001
+        e0_prev_error = 0
+        e1_prev_error = 0
+        
+        e0_sum_error = 0
+        e1_sum_error = 0
+        
+        m0_speed = 0
+        m1_speed = 0
+        
+        self.enc0.reset()
+        self.enc1.reset()
+        self.mot0.set(m0_speed)
+        self.mot1.set(m1_speed)
+        utime.sleep_ms(500)
+        print("e0 {} e1 {}".format(self.enc0.encoderCount, self.enc1.encoderCount))
+        
+        for _ in range(int(time*(1/SAMPLETIME))):
+            e0_error = TARGET - self.enc0.encoderCount
+            e1_error = TARGET - self.enc1.encoderCount
+            print("err0 {} err1 {}".format(e0_error, e1_error))
+            m0_speed += (e0_error * KP) + (e0_prev_error * KD) + (e0_sum_error * KI)
+            m1_speed += (e1_error * KP) + (e1_prev_error * KD) + (e1_sum_error * KI)
+
+            print("m0 {} m1 {}".format(m0_speed, m1_speed))
             
-def drive(speed, time):
-    utime.sleep_ms(50)
-    mot0 = Motor(2, 14, 0)
-    mot1 = Motor(3, 15, 1)
-    mot0.set(speed)
-    mot1.set(speed)
-    utime.sleep_ms(time*1000)
-    mot0.set(0)
-    mot1.set(0)
-    utime.sleep_ms(50)
-    
-def turnleft():
-    utime.sleep_ms(50)
-    mot0 = Motor(2, 14, 0)
-    mot1 = Motor(3, 15, 1)
-    mot0.set(0.4)
-    mot1.set(0.4)
-    utime.sleep_ms(520)
-    mot0.set(0)
-    mot1.set(0)
-    utime.sleep_ms(50)
+            m0_speed = max(min(1, m0_speed), -1)
+            m1_speed = max(min(1, m1_speed), -1)
 
-def turnright():
-    utime.sleep_ms(50)
-    mot0 = Motor(2, 14, 0)
-    mot1 = Motor(3, 15, 1)
-    mot0.set(-0.4)
-    mot1.set(-0.4)
-    utime.sleep_ms(520)
-    mot0.set(0)
-    mot1.set(0)
-    utime.sleep_ms(50)
+            self.mot0.set(m0_speed)
+            self.mot1.set(m1_speed)
+            
+            self.enc0.reset()
+            self.enc1.reset()
+            
+            e0_prev_error = e0_error
+            e1_prev_error = e1_error
+            
+            e0_sum_error += e0_error
+            e1_sum_error += e1_error
+            
+            self.delay(SAMPLETIME)
+            print("e0 {} e1 {}".format(self.enc0.encoderCount, self.enc1.encoderCount))
+            
 
+        self.mot0.set(0)
+        self.mot1.set(0)
+        print(TARGET)
+        utime.sleep_ms(20)
+        
+    def turnleft(self):
+        utime.sleep_ms(50)
+        self.mot0.set(0.4)
+        self.mot1.set(0.4)
+        utime.sleep_ms(520)
+        self.mot0.set(0)
+        self.mot1.set(0)
+        utime.sleep_ms(50)
+
+    def turnright(self):
+        utime.sleep_ms(50)
+        self.mot0.set(-0.4)
+        self.mot1.set(-0.4)
+        utime.sleep_ms(520)
+        self.mot0.set(0)
+        self.mot1.set(0)
+        utime.sleep_ms(50)
+        
 if __name__ == "__main__":
-    delay(2)
-    drive(0.5, 6)
-    
+    r = Robot()
+    r.delay(2)
+    r.drive(0.8, 10)
       
