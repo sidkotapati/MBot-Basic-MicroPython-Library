@@ -18,9 +18,9 @@ class Robot:
     def drive(self, speed, time):
         SAMPLETIME = 0.1
         TARGET = 200*speed
-        KP = 0.002
+        KP = 0.00018
         KD = 0.0001
-        KI = 0.00005
+        KI = 0.00003
         e0_prev_error = 0
         e1_prev_error = 0
         
