@@ -55,6 +55,32 @@ class flowsensor:
     def speed_control(self):
         return self.speed.control(self.get_xy()[1])
 
+def optical_flow_drive(self, speed, time):
+        SAMPLETIME = 0.1
+        TARGET = speed
+        flo = flowsensor()
+        
+        m_speed = 0
+        
+        m0_speed = 0
+        m1_speed = 0
+        
+        speed_controller = PID(0.1, 0, 0, TARGET)
+        proportion_controller = PID(0.1, 0, 0, 0)
+        
+        for _ in range(int(time * (1/SAMPLETIME))):
+            vec = flo.get_xy()
+            
+            m_speed = speed_controller.control(vec[1])
+            
+            
+            
+            self.delay(SAMPLETIME)
+        
+        self.mot0.set(0)
+        self.mot1.set(0)
+        print(TARGET)
+        utime.sleep_ms(20)
 
 def stop(self, prev_speed):
     change = prev_speed / 5
